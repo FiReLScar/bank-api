@@ -363,43 +363,6 @@ let GetHistory = async (id, Session) => {
     return transactions
 }
 
-let prompt = require('prompt-sync')();
-
-let Login = async (username, password) => {
-    console.log("Creating Session...")
-    await CreateSession()
-    console.log("Setting Username...")
-    await Username(username)
-    console.log("Setting Password...")
-    await Password(password)
-    console.log("Logging in...")
-    let questions
-    if (fs.existsSync('questions.json')) {
-        questions = JSON.parse(fs.readFileSync('questions.json'))
-    } else {
-        questions = {}
-    }
-    if (questions[username] == undefined || questions[username][Session.Question] == undefined) {
-        console.log(Session.Question)
-        Session.Answer = prompt('Answer: ')
-        if (questions[username] == undefined) questions[username] = {}
-        questions[username][Session.Question] = Session.Answer
-    } else {
-        Session.Answer = questions[username][Session.Question]
-    }
-    console.log("Answering Question...")
-    await Question()
-    console.log(Session)
-    fs.writeFile('questions.json', JSON.stringify(questions), () => {})
-    console.log("Updating Balance...")
-    await UpdateBalance()
-    console.log(Data)
-    console.log("Getting History...")
-    await GetHistory(Data.Accounts[1].id)
-}
-
-require('dotenv').config()
-
 let express = require('express')
 let app = express()
 let bodyParser = require('body-parser')
