@@ -127,13 +127,19 @@ let Password = async (password, Session) => {
             "Accept-Language": "en-US,en;q=0.9"
         }
     })
+    fs.writeFileSync('response.html', response.data)
     Session.EventTarget_ = new RegExp(/<input type="hidden" name="__EVENTTARGET" id="__EVENTTARGET" value="(.*)" \/>/).exec(response.data)[1]
     Session.EventArgument_ = new RegExp(/<input type="hidden" name="__EVENTARGUMENT" id="__EVENTARGUMENT" value="(.*)" \/>/).exec(response.data)[1]
     Session.ViewState = new RegExp(/<input type="hidden" name="__VIEWSTATE" id="__VIEWSTATE" value="(.*)" \/>/).exec(response.data)[1]
     Session.ViewStateGenerator = new RegExp(/<input type="hidden" name="__VIEWSTATEGENERATOR" id="__VIEWSTATEGENERATOR" value="(.*)" \/>/).exec(response.data)[1]
     Session.EventValidation = new RegExp(/<input type="hidden" name="__EVENTVALIDATION" id="__EVENTVALIDATION" value="(.*)" \/>/).exec(response.data)[1]
     Session.TabLogin = Session.TabLogin.replace(/&quot;/g, '"')
-    Session.Question = new RegExp(/<label for="TFAQuestionPrompt1_Answer" id="TFAQuestionPrompt1_Question">(.*)<\/label>/).exec(response.data)[1]
+    try {
+        Session.Question = new RegExp(/<label for="TFAQuestionPrompt1_Answer" id="TFAQuestionPrompt1_Question">(.*)<\/label>/).exec(response.data)[1]
+    } catch (e) {
+        Session.Question = null
+        return Session
+    }
     Session.KeyID = new RegExp(/<input type="hidden" name="KeyID" value="(.*)" \/>/).exec(response.data)[1]
     return Session
 }
@@ -390,35 +396,52 @@ app.post('/create', async (req, res) => {
     Session = await CreateSession(Session)
     Session = await Username(user, Session)
     Session = await Password(pass, Session)
-    res.send(Session)
+    if (Session.Question==null) res.send({"error": "wrong password"})
+    else res.send(Session)
 })
 
 app.post('/login', async (req, res) => {
     let Session = req.body
-    Session = await Username(user, Session)
-    Session = await Password(pass, Session)
-    res.send(Session)
+    try {
+        Session = await Username(user, Session)
+        Session = await Password(pass, Session)
+        res.send(Session)
+    } catch {
+        res.send({"error": "offline"})
+    }
 })
 
 app.post('/question', async (req, res) => {
     let Session = req.body
-    let ret = await Question(Session)
-    Session = ret.Session
-    let Data = ret.Data
-    res.send({Data, Session})
+    try {
+        let ret = await Question(Session)
+        Session = ret.Session
+        let Data = ret.Data
+        res.send({Data, Session})
+    } catch {
+        res.send({"error": "offline"})
+    }
 })
 
 app.post('/balance', async (req, res) => {
     let Session = req.body
-    let Data = await UpdateBalance(Session)
-    res.send(Data)
+    try {
+        let Data = await UpdateBalance(Session)
+        res.send(Data)
+    } catch {
+        res.send({"error": "offline"})
+    }
 })
 
 app.post('/history', async (req, res) => {
     let Session = req.body.Session
     let Account = req.body.Account
-    let Data = await GetHistory(Account, Session)
-    res.send(Data)
+    try {
+        let Data = await GetHistory(Account, Session)
+        res.send(Data)
+    } catch {
+        res.send({"error": "offline"})
+    }
 })
 
 app.listen(3000, () => {
