@@ -1,27 +1,7 @@
 let axios = require('axios')
 let fs = require('fs')
 
-let Session = {
-    ID: '',
-    ScriptManagerContent: '',
-    TabLogin: '',
-    EventTarget_: '',
-    EventArgument_: '',
-    ViewState: '',
-    ViewStateGenerator: '',
-    EventValidation: '',
-    KeyID: '',
-    SecureCookieKey: '',
-    Question: '',
-    Answer: '',
-    Username: ''
-}
-
-let Data = {
-    Accounts: []
-}
-
-let CreateSession = async () => {
+let CreateSession = async Session => {
     let response = await axios.get('https://www.w-w-i-s.com/hb/51/Default.aspx?entity=UYCI]', {
         headers: {
             "Host": "www.w-w-i-s.com",
@@ -50,9 +30,10 @@ let CreateSession = async () => {
     Session.EventValidation = new RegExp(/<input type="hidden" name="__EVENTVALIDATION" id="__EVENTVALIDATION" value="(.*)" \/>/).exec(response.data)[1]
     Session.KeyID = new RegExp(/<input type="hidden" name="KeyID" id="KeyID" value="(.*)" \/>/).exec(response.data)[1]
     Session.TabLogin = Session.TabLogin.replace(/&quot;/g, '"')
+    return Session
 }
 
-let Username = async username => {
+let Username = async (username, Session) => {
     let response = await axios.post('https://www.w-w-i-s.com/hb/51/Default.aspx?entity=UYCI]', {
         "ScriptManagerContent_HiddenField": Session.ScriptManagerContent,
         "tabLogin_ClientState": Session.TabLogin,
@@ -102,9 +83,10 @@ let Username = async username => {
     Session.KeyID = new RegExp(/<input type="hidden" name="KeyID" id="KeyID" value="(.*)" \/>/).exec(response.data)[1]
     Session.TabLogin = Session.TabLogin.replace(/&quot;/g, '"')
     Session.Username = username
+    return Session
 }
 
-let Password = async password => {
+let Password = async (password, Session) => {
     Session.SecureCookieKey = "Secure_" + Session.Username
     let response = await axios.post('https://www.w-w-i-s.com/hb/51/Default.aspx?entity=UYCI]', {
         "ScriptManagerContent_HiddenField": "",
@@ -153,9 +135,10 @@ let Password = async password => {
     Session.TabLogin = Session.TabLogin.replace(/&quot;/g, '"')
     Session.Question = new RegExp(/<label for="TFAQuestionPrompt1_Answer" id="TFAQuestionPrompt1_Question">(.*)<\/label>/).exec(response.data)[1]
     Session.KeyID = new RegExp(/<input type="hidden" name="KeyID" value="(.*)" \/>/).exec(response.data)[1]
+    return Session
 }
 
-let Question = async () => {
+let Question = async Session => {
     let response = await axios.post('https://www.w-w-i-s.com/hb/51/login.aspx?KeyID='+Session.KeyID+'&flash=no', {
         "__EVENTTARGET": "",
         "__EVENTARGUMENT": "",
@@ -187,7 +170,6 @@ let Question = async () => {
             "Accept-Language": "en-US,en;q=0.9"
         }
     })
-    // save session data
     Session.EventTarget_ = new RegExp(/<input type="hidden" name="__EVENTTARGET" id="__EVENTTARGET" value="(.*)" \/>/).exec(response.data)[1]
     Session.EventArgument_ = new RegExp(/<input type="hidden" name="__EVENTARGUMENT" id="__EVENTARGUMENT" value="(.*)" \/>/).exec(response.data)[1]
     Session.ViewState = new RegExp(/<input type="hidden" name="__VIEWSTATE" id="__VIEWSTATE" value="(.*)" \/>/).exec(response.data)[1]
@@ -232,6 +214,9 @@ let Question = async () => {
     Session.TabLogin = Session.TabLogin.replace(/&quot;/g, '"')
     let page = accept.data
     let matches = page.match(/<td><a id="Landing1_AccountBox1_AccountRepeater_ctl[0-9][0-9]_History" href="(.*)">(.*)<\/a><\/td>/gi)
+    let Data = {
+        Accounts: []
+    }
     for (let match of matches) {
         let id = new RegExp(/ctl[0-9][0-9]/).exec(match)[0]
         let account = new RegExp(/href="(.*)">(.*)<\/a><\/td>/).exec(match)[2]
@@ -244,9 +229,13 @@ let Question = async () => {
             bal: bal
         })
     }
+    return {
+        Session,
+        Data
+    }
 }
 
-let UpdateBalance = async () => {
+let UpdateBalance = async Session => {
     let response = await axios.post('https://www.w-w-i-s.com/hb/51/Account.aspx?KeyID='+Session.KeyID, {
         "ScriptManagerContent": "ScriptManagerContent|lkViewAccounts",
         "ScriptManagerContent_HiddenField": "",
@@ -282,7 +271,9 @@ let UpdateBalance = async () => {
     })
     let page = response.data
     let matches = page.match(/<td><a id="Landing1_AccountBox1_AccountRepeater_ctl[0-9][0-9]_History" href="(.*)">(.*)<\/a><\/td>/gi)
-    Data.Accounts = []
+    let Data = {
+        Accounts: []
+    }
     for (let match of matches) {
         let id = new RegExp(/ctl[0-9][0-9]/).exec(match)[0]
         let account = new RegExp(/href="(.*)">(.*)<\/a><\/td>/).exec(match)[2]
@@ -295,9 +286,10 @@ let UpdateBalance = async () => {
             bal: bal
         })
     }
+    return Data
 }
 
-let GetHistory = async (id) => {
+let GetHistory = async (id, Session) => {
     let response = await axios.post('https://www.w-w-i-s.com/hb/51/Account.aspx?KeyID='+Session.KeyID, {
         "ScriptManagerContent": "UpdatePanelContentSection|Landing1$AccountBox1$AccountRepeater$"+id+"$History",
         "ScriptManagerContent_HiddenField": "",
@@ -342,7 +334,6 @@ let GetHistory = async (id) => {
             let date = data[1]
             let desc = data[2]
             let money = data[3]=="&nbsp;"?data[5]:data[3]
-            console.log(data[1], data[2], data[3], data[4], data[5], data[6], data[7])
             transactions.push({
                 date: date,
                 desc: desc,
@@ -369,7 +360,7 @@ let GetHistory = async (id) => {
             })
         }
     }
-    console.log(transactions)
+    return transactions
 }
 
 let prompt = require('prompt-sync')();
@@ -408,4 +399,65 @@ let Login = async (username, password) => {
 }
 
 require('dotenv').config()
-Login(process.env.USERNAME, process.env.PASSWORD)
+
+let express = require('express')
+let app = express()
+let bodyParser = require('body-parser')
+
+app.use(bodyParser.json());
+
+app.post('/create', async (req, res) => {
+    let user = req.body.username
+    let pass = req.body.password
+    let Session = {
+        ID: '',
+        ScriptManagerContent: '',
+        TabLogin: '',
+        EventTarget_: '',
+        EventArgument_: '',
+        ViewState: '',
+        ViewStateGenerator: '',
+        EventValidation: '',
+        KeyID: '',
+        SecureCookieKey: '',
+        Question: '',
+        Answer: '',
+        Username: ''
+    }
+    Session = await CreateSession(Session)
+    Session = await Username(user, Session)
+    Session = await Password(pass, Session)
+    res.send(Session)
+})
+
+app.post('/login', async (req, res) => {
+    let Session = req.body
+    Session = await Username(user, Session)
+    Session = await Password(pass, Session)
+    res.send(Session)
+})
+
+app.post('/question', async (req, res) => {
+    let Session = req.body
+    let ret = await Question(Session)
+    Session = ret.Session
+    let Data = ret.Data
+    res.send({Data, Session})
+})
+
+app.post('/balance', async (req, res) => {
+    let Session = req.body
+    let Data = await UpdateBalance(Session)
+    res.send(Data)
+})
+
+app.post('/history', async (req, res) => {
+    let Session = req.body.Session
+    let Account = req.body.Account
+    let Data = await GetHistory(Account, Session)
+    res.send(Data)
+})
+
+app.listen(3000, () => {
+    console.log('Listening on port 3000!')
+})
