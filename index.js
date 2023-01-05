@@ -368,81 +368,131 @@ let GetHistory = async (id, Session) => {
     return transactions
 }
 
-let express = require('express')
-let app = express()
-let bodyParser = require('body-parser')
+// let express = require('express')
+// let app = express()
+// let bodyParser = require('body-parser')
+const { exit } = require('process')
 
-app.use(bodyParser.json());
+// app.use(bodyParser.json());
 
-app.post('/create', async (req, res) => {
-    let user = req.body.username
-    let pass = req.body.password
-    let Session = {
-        ID: '',
-        ScriptManagerContent: '',
-        TabLogin: '',
-        EventTarget_: '',
-        EventArgument_: '',
-        ViewState: '',
-        ViewStateGenerator: '',
-        EventValidation: '',
-        KeyID: '',
-        SecureCookieKey: '',
-        Question: '',
-        Answer: '',
-        Username: ''
-    }
+// app.post('/create', async (req, res) => {
+//     let user = req.body.username
+//     let pass = req.body.password
+//     let Session = {
+//         ID: '',
+//         ScriptManagerContent: '',
+//         TabLogin: '',
+//         EventTarget_: '',
+//         EventArgument_: '',
+//         ViewState: '',
+//         ViewStateGenerator: '',
+//         EventValidation: '',
+//         KeyID: '',
+//         SecureCookieKey: '',
+//         Question: '',
+//         Answer: '',
+//         Username: ''
+//     }
+//     Session = await CreateSession(Session)
+//     Session = await Username(user, Session)
+//     Session = await Password(pass, Session)
+//     if (Session.Question==null) res.send({"error": "wrong password"})
+//     else res.send(Session)
+// })
+
+// app.post('/login', async (req, res) => {
+//     let Session = req.body
+//     try {
+//         Session = await Username(user, Session)
+//         Session = await Password(pass, Session)
+//         res.send(Session)
+//     } catch {
+//         res.send({"error": "offline"})
+//     }
+// })
+
+// app.post('/question', async (req, res) => {
+//     let Session = req.body
+//     try {
+//         let ret = await Question(Session)
+//         Session = ret.Session
+//         let Data = ret.Data
+//         res.send({Data, Session})
+//     } catch {
+//         res.send({"error": "offline"})
+//     }
+// })
+
+// app.post('/balance', async (req, res) => {
+//     let Session = req.body
+//     try {
+//         let Data = await UpdateBalance(Session)
+//         res.send(Data)
+//     } catch {
+//         res.send({"error": "offline"})
+//     }
+// })
+
+// app.post('/history', async (req, res) => {
+//     let Session = req.body.Session
+//     let Account = req.body.Account
+//     try {
+//         let Data = await GetHistory(Account, Session)
+//         res.send(Data)
+//     } catch {
+//         res.send({"error": "offline"})
+//     }
+// })
+
+let Session = {
+    ID: '',
+    ScriptManagerContent: '',
+    TabLogin: '',
+    EventTarget_: '',
+    EventArgument_: '',
+    ViewState: '',
+    ViewStateGenerator: '',
+    EventValidation: '',
+    KeyID: '',
+    SecureCookieKey: '',
+    Question: '',
+    Answer: '',
+    Username: ''
+}
+
+require('dotenv').config()
+
+
+let Answers = require('./Answers.json')
+
+let init = async () => {
     Session = await CreateSession(Session)
-    Session = await Username(user, Session)
-    Session = await Password(pass, Session)
-    if (Session.Question==null) res.send({"error": "wrong password"})
-    else res.send(Session)
-})
-
-app.post('/login', async (req, res) => {
-    let Session = req.body
-    try {
-        Session = await Username(user, Session)
-        Session = await Password(pass, Session)
-        res.send(Session)
-    } catch {
-        res.send({"error": "offline"})
+    Session = await Username(process.env.user, Session)
+    Session = await Password(process.env.pass, Session)
+    if (Session.Question==null) console.log("Wrong password")
+    else {
+        try {
+            Session.Answer = Answers[Session.Question]
+            Session = await (await Question(Session)).Session
+        } catch {
+            console.log("Question: " + Session.Question)
+            exit(0)
+        }
+        setInterval(async () => {
+            let history = []
+            let Data = await UpdateBalance(Session)
+            for (let i = 0; i < Data["Accounts"].length; i++) {
+                let History = await GetHistory(Data["Accounts"][i].id, Session)
+                history.push(History)
+            }
+            fs.writeFileSync("data.json", JSON.stringify({"Balance": Data, "History": history}))
+            console.log("Refreshed...")
+        }, 0.5 * 60 * 1000)
     }
-})
+}
 
-app.post('/question', async (req, res) => {
-    let Session = req.body
-    try {
-        let ret = await Question(Session)
-        Session = ret.Session
-        let Data = ret.Data
-        res.send({Data, Session})
-    } catch {
-        res.send({"error": "offline"})
-    }
-})
+init()
 
-app.post('/balance', async (req, res) => {
-    let Session = req.body
-    try {
-        let Data = await UpdateBalance(Session)
-        res.send(Data)
-    } catch {
-        res.send({"error": "offline"})
-    }
-})
-
-app.post('/history', async (req, res) => {
-    let Session = req.body.Session
-    let Account = req.body.Account
-    try {
-        let Data = await GetHistory(Account, Session)
-        res.send(Data)
-    } catch {
-        res.send({"error": "offline"})
-    }
-})
-
-app.listen(3000, () => {
-    console.log('Listening on port 3000!')
-})
+// app.listen(7331, () => {
+//     console.log('Listening on port 7331!')
+// })
