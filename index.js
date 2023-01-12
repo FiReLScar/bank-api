@@ -477,6 +477,7 @@ let Session = {
 
 require('dotenv').config()
 
+let rate = process.env.RATE
 
 let Answers = require('./Answers.json')
 
@@ -512,7 +513,7 @@ let init = async () => {
             }
             if (!err) fs.writeFileSync("data.json", JSON.stringify({"Balance": Data, "History": history}))
             console.log("Refreshed...")
-        }, 0.5 * 60 * 1000)
+        }, rate * 1000)
     }
 }
 
