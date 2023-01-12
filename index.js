@@ -222,17 +222,22 @@ let Question = async Session => {
     let Data = {
         Accounts: []
     }
-    for (let match of matches) {
-        let id = new RegExp(/ctl[0-9][0-9]/).exec(match)[0]
-        let account = new RegExp(/href="(.*)">(.*)<\/a><\/td>/).exec(match)[2]
-        let penbal = new RegExp('<td id="Landing1_AccountBox1_AccountRepeater_'+id+'_BalCol1TCell" class="Money">(.*)<\/td>').exec(page)[1]
-        let bal = new RegExp('<td id="Landing1_AccountBox1_AccountRepeater_'+id+'_BalCol1TCell" class="Money">.*<\\/td>[\\n\\s]+<td class="Money">((-|)\\$[0-9.]+)').exec(page)[1]
-        Data.Accounts.push({
-            id: id,
-            account: account,
-            penbal: penbal,
-            bal: bal
-        })
+    try {
+        for (let match of matches) {
+            let id = new RegExp(/ctl[0-9][0-9]/).exec(match)[0]
+            let account = new RegExp(/href="(.*)">(.*)<\/a><\/td>/).exec(match)[2]
+            let penbal = new RegExp('<td id="Landing1_AccountBox1_AccountRepeater_'+id+'_BalCol1TCell" class="Money">(.*)<\/td>').exec(page)[1]
+            let bal = new RegExp('<td id="Landing1_AccountBox1_AccountRepeater_'+id+'_BalCol1TCell" class="Money">.*<\\/td>[\\n\\s]+<td class="Money">((-|)\\$[0-9.]+)').exec(page)[1]
+            Data.Accounts.push({
+                id: id,
+                account: account,
+                penbal: penbal,
+                bal: bal
+            })
+        }
+    } catch (e) {
+        console.log("Server Down...")
+        return null;
     }
     return {
         Session,
@@ -279,17 +284,22 @@ let UpdateBalance = async Session => {
     let Data = {
         Accounts: []
     }
-    for (let match of matches) {
-        let id = new RegExp(/ctl[0-9][0-9]/).exec(match)[0]
-        let account = new RegExp(/href="(.*)">(.*)<\/a><\/td>/).exec(match)[2]
-        let penbal = new RegExp('<td id="Landing1_AccountBox1_AccountRepeater_'+id+'_BalCol1TCell" class="Money">(.*)<\/td>').exec(page)[1]
-        let bal = new RegExp('<td id="Landing1_AccountBox1_AccountRepeater_'+id+'_BalCol1TCell" class="Money">.*<\\/td>[\\n\\s]+<td class="Money">((-|)\\$[0-9.]+)').exec(page)[1]
-        Data.Accounts.push({
-            id: id,
-            account: account,
-            penbal: penbal,
-            bal: bal
-        })
+    try {
+        for (let match of matches) {
+            let id = new RegExp(/ctl[0-9][0-9]/).exec(match)[0]
+            let account = new RegExp(/href="(.*)">(.*)<\/a><\/td>/).exec(match)[2]
+            let penbal = new RegExp('<td id="Landing1_AccountBox1_AccountRepeater_'+id+'_BalCol1TCell" class="Money">(.*)<\/td>').exec(page)[1]
+            let bal = new RegExp('<td id="Landing1_AccountBox1_AccountRepeater_'+id+'_BalCol1TCell" class="Money">.*<\\/td>[\\n\\s]+<td class="Money">((-|)\\$[0-9.]+)').exec(page)[1]
+            Data.Accounts.push({
+                id: id,
+                account: account,
+                penbal: penbal,
+                bal: bal
+            })
+        }
+    } catch (e) {
+        console.log("Server Down...")
+        return null;
     }
     return Data
 }
@@ -333,37 +343,42 @@ let GetHistory = async (id, Session) => {
     let PendTable = page.substring(PendTransDiv, PendTransEnd)
     let matches = PendTable.match(/<td><a id="HistoryBox1_PendTransactionsGrid_ctl[0-9][0-9]_PendDateLink" href=".*">([0-9]+\/[0-9]+\/[0-9]*)<br>.*<\/a><\/td><td>(.*)<\/td><td class="Money">(&nbsp;|\$[0-9.]+)<\/td><td class="Money">(&nbsp;|\$[0-9.]+)<\/td>/gi)
     let transactions = []
-    if (matches!=null) {
-        for (let match of matches) {
-            let data = new RegExp(/<td><a id="HistoryBox1_PendTransactionsGrid_ctl[0-9][0-9]_PendDateLink" href=".*">([0-9]+\/[0-9]+\/[0-9]*)<br>.*<\/a><\/td><td>(.*)<\/td><td class="Money">(&nbsp;|(-|)\$[0-9.]+)<\/td><td class="Money">(&nbsp;|(-|)\$[0-9.]+)<\/td>/gi).exec(match)
-            let date = data[1]
-            let desc = data[2]
-            let money = data[3]=="&nbsp;"?data[5]:data[3]
-            transactions.push({
-                date: date,
-                desc: desc,
-                money: money,
-                balance: null,
-                pending: true
-            })
+    try {
+        if (matches!=null) {
+            for (let match of matches) {
+                let data = new RegExp(/<td><a id="HistoryBox1_PendTransactionsGrid_ctl[0-9][0-9]_PendDateLink" href=".*">([0-9]+\/[0-9]+\/[0-9]*)<br>.*<\/a><\/td><td>(.*)<\/td><td class="Money">(&nbsp;|(-|)\$[0-9.]+)<\/td><td class="Money">(&nbsp;|(-|)\$[0-9.]+)<\/td>/gi).exec(match)
+                let date = data[1]
+                let desc = data[2]
+                let money = data[3]=="&nbsp;"?data[5]:data[3]
+                transactions.push({
+                    date: date,
+                    desc: desc,
+                    money: money,
+                    balance: null,
+                    pending: true
+                })
+            }
         }
-    }
-    matches = page.match(/<td><a id="HistoryBox1_LastTransactionGrid_ctl[0-9]+_HistDateLink" href=".*">([0-9]+\/[0-9]+\/[0-9]+)<\/a>\s*<\/td><td>(.*)<\/td><td class="Money">(-\$[0-9.]+|)<\/td><td class="Money">(\$[0-9.]+|)<\/td><td class="Money">((-|)\$[0-9.]+|)<\/td>/gi)
-    if (matches!=null) {
-        for (let match of matches) {
-            let data = new RegExp(/<td><a id="HistoryBox1_LastTransactionGrid_ctl[0-9]+_HistDateLink" href=".*">([0-9]+\/[0-9]+\/[0-9]+)<\/a>\s*<\/td><td>(.*)<\/td><td class="Money">(-\$[0-9.]+|)<\/td><td class="Money">(\$[0-9.]+|)<\/td><td class="Money">((-|)\$[0-9.]+|)<\/td>/gi).exec(match)
-            let date = data[1]
-            let desc = data[2]
-            let money = data[3]==""?data[4]:data[3]
-            let balance = data[5]
-            transactions.push({
-                date: date,
-                desc: desc,
-                money: money,
-                balance: balance,
-                pending: false
-            })
+        matches = page.match(/<td><a id="HistoryBox1_LastTransactionGrid_ctl[0-9]+_HistDateLink" href=".*">([0-9]+\/[0-9]+\/[0-9]+)<\/a>\s*<\/td><td>(.*)<\/td><td class="Money">(-\$[0-9.]+|)<\/td><td class="Money">(\$[0-9.]+|)<\/td><td class="Money">((-|)\$[0-9.]+|)<\/td>/gi)
+        if (matches!=null) {
+            for (let match of matches) {
+                let data = new RegExp(/<td><a id="HistoryBox1_LastTransactionGrid_ctl[0-9]+_HistDateLink" href=".*">([0-9]+\/[0-9]+\/[0-9]+)<\/a>\s*<\/td><td>(.*)<\/td><td class="Money">(-\$[0-9.]+|)<\/td><td class="Money">(\$[0-9.]+|)<\/td><td class="Money">((-|)\$[0-9.]+|)<\/td>/gi).exec(match)
+                let date = data[1]
+                let desc = data[2]
+                let money = data[3]==""?data[4]:data[3]
+                let balance = data[5]
+                transactions.push({
+                    date: date,
+                    desc: desc,
+                    money: money,
+                    balance: balance,
+                    pending: false
+                })
+            }
         }
+    } catch (e) {
+        console.log("Server Down...")
+        return null;
     }
     return transactions
 }
@@ -465,6 +480,11 @@ require('dotenv').config()
 
 let Answers = require('./Answers.json')
 
+let retry = async () => {
+    console.log("Will implement retry later")
+    exit(1)
+}
+
 let init = async () => {
     Session = await CreateSession(Session)
     Session = await Username(process.env.user, Session)
@@ -473,7 +493,9 @@ let init = async () => {
     else {
         try {
             Session.Answer = Answers[Session.Question]
-            Session = await (await Question(Session)).Session
+            Session = await Question(Session)
+            if (Session == null) retry()
+            else Session = Session.Session
         } catch {
             console.log("Question: " + Session.Question)
             exit(0)
@@ -481,11 +503,14 @@ let init = async () => {
         setInterval(async () => {
             let history = []
             let Data = await UpdateBalance(Session)
-            for (let i = 0; i < Data["Accounts"].length; i++) {
+            let err = false
+            if (Data == null) err = true
+            for (let i = 0; i < Data["Accounts"].length&&!err; i++) {
                 let History = await GetHistory(Data["Accounts"][i].id, Session)
+                if (History == null) err = true
                 history.push(History)
             }
-            fs.writeFileSync("data.json", JSON.stringify({"Balance": Data, "History": history}))
+            if (!err) fs.writeFileSync("data.json", JSON.stringify({"Balance": Data, "History": history}))
             console.log("Refreshed...")
         }, 0.5 * 60 * 1000)
     }
