@@ -506,7 +506,7 @@ let init = async () => {
             let Data = await UpdateBalance(Session)
             let err = false
             if (Data == null) err = true
-            for (let i = 0; i < Data["Accounts"].length&&!err; i++) {
+            for (let i = 0; i < !err&&Data["Accounts"].length; i++) {
                 let History = await GetHistory(Data["Accounts"][i].id, Session)
                 if (History == null) err = true
                 history.push(History)
