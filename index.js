@@ -2,6 +2,7 @@ let axios = require('axios')
 let fs = require('fs')
 
 let CreateSession = async Session => {
+    let retry = 0
     let response = await axios.get('https://www.w-w-i-s.com/hb/51/Default.aspx?entity=UYCI]', {
         headers: {
             "Host": "www.w-w-i-s.com",
@@ -19,7 +20,11 @@ let CreateSession = async Session => {
             "Accept-Language": "en-US,en;q=0.9",
             "Connection": "close"
         }
+    }).catch(err => {
+        retry = 1
+        response = CreateSession(Session)
     })
+    if (retry == 1) return response
     Session.ID = response.headers['set-cookie'][0].split(';')[0].split('=')[1]
     Session.ScriptManagerContent = ";;AjaxControlToolkit, Version=3.5.50401.0, Culture=neutral, PublicKeyToken=28f01b0e84b6d53e:en-US:beac0bd6-6280-4a04-80bd-83d08f77c177:de1feab2:f9cec9bc:a0b0f951:a67c2700"
     Session.TabLogin = new RegExp(/<input type="hidden" name="tabLogin_ClientState" id="tabLogin_ClientState" value="(.*)" \/>/).exec(response.data)[1]
@@ -34,6 +39,7 @@ let CreateSession = async Session => {
 }
 
 let Username = async (username, Session) => {
+    let retry = 0
     let response = await axios.post('https://www.w-w-i-s.com/hb/51/Default.aspx?entity=UYCI]', {
         "ScriptManagerContent_HiddenField": Session.ScriptManagerContent,
         "tabLogin_ClientState": Session.TabLogin,
@@ -72,7 +78,11 @@ let Username = async (username, Session) => {
             "Accept-Encoding": "gzip, deflate",
             "Accept-Language": "en-US,en;q=0.9"
         }
+    }).catch(err => {
+        retry = 1
+        response = Username(username, Session)
     })
+    if (retry == 1) return response
     Session.ScriptManagerContent = new RegExp(/<input type="hidden" name="ScriptManagerContent_HiddenField" id="ScriptManagerContent_HiddenField" value="(.*)" \/>/).exec(response.data)[1]
     Session.TabLogin = new RegExp(/<input type="hidden" name="tabLogin_ClientState" id="tabLogin_ClientState" value="(.*)" \/>/).exec(response.data)[1]
     Session.EventTarget_ = new RegExp(/<input type="hidden" name="__EVENTTARGET" id="__EVENTTARGET" value="(.*)" \/>/).exec(response.data)[1]
@@ -87,6 +97,7 @@ let Username = async (username, Session) => {
 }
 
 let Password = async (password, Session) => {
+    let retry = 0
     Session.SecureCookieKey = "Secure_" + Session.Username
     let response = await axios.post('https://www.w-w-i-s.com/hb/51/Default.aspx?entity=UYCI]', {
         "ScriptManagerContent_HiddenField": "",
@@ -126,7 +137,11 @@ let Password = async (password, Session) => {
             "Accept-Encoding": "gzip, deflate",
             "Accept-Language": "en-US,en;q=0.9"
         }
+    }).catch(err => {
+        retry = 1
+        response = Password(password, Session)
     })
+    if (retry == 1) return response
     Session.EventTarget_ = new RegExp(/<input type="hidden" name="__EVENTTARGET" id="__EVENTTARGET" value="(.*)" \/>/).exec(response.data)[1]
     Session.EventArgument_ = new RegExp(/<input type="hidden" name="__EVENTARGUMENT" id="__EVENTARGUMENT" value="(.*)" \/>/).exec(response.data)[1]
     Session.ViewState = new RegExp(/<input type="hidden" name="__VIEWSTATE" id="__VIEWSTATE" value="(.*)" \/>/).exec(response.data)[1]
@@ -144,6 +159,7 @@ let Password = async (password, Session) => {
 }
 
 let Question = async Session => {
+    let retry = 0
     let response = await axios.post('https://www.w-w-i-s.com/hb/51/login.aspx?KeyID='+Session.KeyID+'&flash=no', {
         "__EVENTTARGET": "",
         "__EVENTARGUMENT": "",
@@ -174,7 +190,11 @@ let Question = async Session => {
             "Accept-Encoding": "gzip, deflate",
             "Accept-Language": "en-US,en;q=0.9"
         }
+    }).catch(err => {
+        retry = 1
+        response = Question(Session)
     })
+    if (retry == 1) return response
     Session.EventTarget_ = new RegExp(/<input type="hidden" name="__EVENTTARGET" id="__EVENTTARGET" value="(.*)" \/>/).exec(response.data)[1]
     Session.EventArgument_ = new RegExp(/<input type="hidden" name="__EVENTARGUMENT" id="__EVENTARGUMENT" value="(.*)" \/>/).exec(response.data)[1]
     Session.ViewState = new RegExp(/<input type="hidden" name="__VIEWSTATE" id="__VIEWSTATE" value="(.*)" \/>/).exec(response.data)[1]
@@ -211,7 +231,11 @@ let Question = async Session => {
             "Accept-Encoding": "gzip, deflate",
             "Accept-Language": "en-US,en;q=0.9"
         }
+    }).catch(err => {
+        retry = 1
+        response = Question(Session)
     })
+    if (retry == 1) return response
     Session.EventTarget_ = new RegExp(/<input type="hidden" name="__EVENTTARGET" id="__EVENTTARGET" value="(.*)" \/>/).exec(accept.data)[1]
     Session.EventArgument_ = new RegExp(/<input type="hidden" name="__EVENTARGUMENT" id="__EVENTARGUMENT" value="(.*)" \/>/).exec(accept.data)[1]
     Session.ViewState = new RegExp(/<input type="hidden" name="__VIEWSTATE" id="__VIEWSTATE" value="(.*)" \/>/).exec(accept.data)[1]
@@ -246,6 +270,7 @@ let Question = async Session => {
 }
 
 let UpdateBalance = async Session => {
+    let retry = 0
     let response = await axios.post('https://www.w-w-i-s.com/hb/51/Account.aspx?KeyID='+Session.KeyID, {
         "ScriptManagerContent": "ScriptManagerContent|lkViewAccounts",
         "ScriptManagerContent_HiddenField": "",
@@ -278,7 +303,11 @@ let UpdateBalance = async Session => {
             "Accept-Encoding": "gzip, deflate",
             "Accept-Language": "en-US,en;q=0.9"
         }
+    }).catch(err => {
+        retry = 1
+        response = UpdateBalance(Session)
     })
+    if (retry == 1) return response
     let page = response.data
     let matches = page.match(/<td><a id="Landing1_AccountBox1_AccountRepeater_ctl[0-9][0-9]_History" href="(.*)">(.*)<\/a><\/td>/gi)
     let Data = {
@@ -305,6 +334,7 @@ let UpdateBalance = async Session => {
 }
 
 let GetHistory = async (id, Session) => {
+    let retry = 0
     let response = await axios.post('https://www.w-w-i-s.com/hb/51/Account.aspx?KeyID='+Session.KeyID, {
         "ScriptManagerContent": "UpdatePanelContentSection|Landing1$AccountBox1$AccountRepeater$"+id+"$History",
         "ScriptManagerContent_HiddenField": "",
@@ -336,7 +366,11 @@ let GetHistory = async (id, Session) => {
             "Accept-Encoding": "gzip, deflate",
             "Accept-Language": "en-US,en;q=0.9"
         }
+    }).catch(err => {
+        retry = 1
+        response = GetHistory(id, Session)
     })
+    if (retry == 1) return response
     let page = response.data
     let PendTransDiv = page.indexOf('<div id="HistoryBox1_PendTransactionsDiv">')+'<div id="HistoryBox1_PendTransactionsDiv">'.length
     let PendTransEnd = page.indexOf('</div>', PendTransDiv)
